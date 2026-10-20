@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3LOW Practice Table</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>
+/* Layout: the felt board is the stage on the left; a narrow "table-side" rail holds score, your dice, and the coach log. */
+:root{
+  --bg:#dfe2e5; --surface:#f6f7f8; --ink:#0c0d0f; --muted:#596069; --line:#c3c8ce;
+  --good:#16804f; --bad:#c9341f; --hi:#f2c230; --hi-ink:#0c0d0f;
+  --f-display:"Permanent Marker","Marker Felt","Comic Sans MS",cursive;
+  --f-body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111214; --surface:#1a1c1f; --ink:#f0f0ee; --muted:#9aa1a9; --line:#2d3035;
+  --good:#3fcf8e; --bad:#ff6b56; --hi:#f2c230; --hi-ink:#0c0d0f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111214; --surface:#1a1c1f; --ink:#f0f0ee; --muted:#9aa1a9; --line:#2d3035;
+  --good:#3fcf8e; --bad:#ff6b56; --hi:#f2c230; --hi-ink:#0c0d0f; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px 40px}
+.wrap{max-width:1200px;margin:0 auto;display:grid;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 24px;border-bottom:2px solid var(--ink);padding-bottom:6px}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h1{font-family:var(--f-display);font-weight:400;font-size:clamp(28px,3.4vw,36px);line-height:1;margin:0;letter-spacing:.02em}
+.brand .by{font-family:var(--f-num);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.tag{margin:0;color:var(--muted);max-width:62ch;font-size:13px;line-height:1.35}
+main{display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:22px;align-items:start}
+@media (max-width:920px){main{grid-template-columns:minmax(0,1fr)}}
+
+.stage{display:grid;gap:10px;justify-items:center;min-width:0}
+.boardwrap{position:relative;width:100%;max-width:760px;aspect-ratio:1/1}
+canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+canvas.grabbing{cursor:grabbing}
+.status{width:100%;max-width:760px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+  background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:4px}
+.status p{margin:0;font-weight:500;min-width:0;flex:1 1 280px}
+.status .controls{display:flex;gap:8px;flex-wrap:wrap}
+.status label{font-size:13px;display:flex;gap:6px;align-items:center;cursor:pointer}
+
+.banner{position:absolute;inset:auto 8% 50% 8%;transform:translateY(50%);background:var(--ink);color:var(--bg);
+  border:3px solid var(--hi);padding:20px 22px;display:grid;gap:10px;text-align:center;border-radius:4px;box-shadow:0 14px 40px rgba(0,0,0,.35)}
+.banner h2{font-family:var(--f-display);font-weight:400;font-size:32px;margin:0;line-height:1.05;text-wrap:balance}
+.banner p{margin:0;font-family:var(--f-num);font-size:14px}
+.banner button{justify-self:center}
+
+button{font:600 14px var(--f-body);border-radius:4px;padding:9px 14px;cursor:pointer;border:2px solid var(--ink);background:var(--surface);color:var(--ink)}
+button.primary{background:var(--hi);border-color:var(--hi);color:var(--hi-ink)}
+.status button{border-color:var(--bg);background:transparent;color:var(--bg)}
+.status button.primary{background:var(--hi);border-color:var(--hi);color:var(--hi-ink)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,summary:focus-visible,.trayDie:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+
+aside{display:grid;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px}
+.card h3{margin:0 0 10px;font:700 12px var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+.players{display:grid;gap:8px}
+.cardHead{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cardHead h3{margin:0}
+.pctl{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.pctl b{color:var(--ink);font-family:var(--f-num)}
+.pctl button{width:30px;height:30px;padding:0;font-size:18px;line-height:1;display:grid;place-items:center}
+.pnote{margin:-4px 0 10px;font-size:12px;color:var(--muted)}
+.prow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:8px 10px;border-radius:4px;border:2px solid transparent}
+.prow.active{border-color:var(--ink)}
+.chip{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:12px var(--f-display);color:#0c0d0f;grid-row:span 2}
+.pname{font-weight:700}
+.pips{display:flex;gap:4px}
+.pips span{width:12px;height:12px;border:2px solid var(--ink);border-radius:50%}
+.pips span.on{background:var(--ink)}
+.pmeta{grid-column:2/4;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.ptotal{font-family:var(--f-num);font-size:18px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.minidice{display:flex;gap:3px}
+.adjs{display:flex;gap:5px;flex-wrap:wrap;width:100%}
+.adj{font:600 12px var(--f-num);padding:2px 7px;border-radius:999px;border:1.5px solid var(--line);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.adj.good{border-color:var(--good);color:var(--good)} .adj.bad{border-color:var(--bad);color:var(--bad)}
+.adj.free{border-style:dashed}
+.die.combo{box-shadow:0 0 0 2px var(--good)}
+.die.tgt{background:#0c0d0f;border-color:var(--good);color:#f4f4f1;display:grid;place-items:center;font:600 10px var(--f-num);grid-template-columns:1fr;grid-template-rows:1fr;padding:0}
+
+.die{width:30px;height:30px;background:#fbfbf9;border:2px solid #0c0d0f;border-radius:6px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:3px;flex:none}
+.die i{display:block;border-radius:50%;margin:1px}
+.die i.on{background:#0c0d0f}
+.die.sm{width:20px;height:20px;padding:2px;border-radius:4px;border-width:1.5px}
+.die.sm i{margin:.5px}
+
+.tray{display:flex;gap:10px;flex-wrap:wrap;min-height:64px}
+.trayDie{display:grid;justify-items:center;gap:4px;background:none;border:2px solid var(--line);padding:6px 6px 4px;border-radius:6px;min-width:56px}
+.trayDie[aria-pressed="true"]{border-color:var(--hi);background:color-mix(in srgb,var(--hi) 22%,transparent)}
+.trayDie .t{font:600 11px var(--f-num);color:var(--muted)}
+.trayDie .t.good{color:var(--good)} .trayDie .t.bad{color:var(--bad)}
+.empty{color:var(--muted);font-size:13px;margin:0;align-self:center}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.breakdown{font-family:var(--f-num);font-size:13px;color:var(--muted);margin-top:10px;font-variant-numeric:tabular-nums}
+
+.log{max-height:300px;overflow-y:auto;display:grid;gap:6px;font-size:14px;padding-right:4px}
+.log p{margin:0;padding:6px 8px 6px 10px;border-left:3px solid var(--line)}
+.log p.good{border-color:var(--good)} .log p.bad{border-color:var(--bad)} .log p.win{border-color:var(--hi);background:color-mix(in srgb,var(--hi) 16%,transparent)}
+.log p.round{border:none;padding:8px 0 2px;font:700 12px var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.log b{font-weight:700}
+.v{font-family:var(--f-num);font-weight:600}
+.v.good{color:var(--good)} .v.bad{color:var(--bad)}
+
+details.rules summary{cursor:pointer;font:700 12px var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.rules h4{font-family:var(--f-display);font-weight:400;font-size:18px;margin:14px 0 6px}
+.rules ol,.rules ul{margin:0;padding-left:20px;display:grid;gap:3px;font-size:14px}
+.rules table{border-collapse:collapse;font-size:14px;width:100%}
+.rules td{padding:3px 0;border-bottom:1px dashed var(--line)}
+.rules td:last-child{text-align:right;font-family:var(--f-num);font-weight:600}
+.rules .note{font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* layout order: mobile puts board, then your throw, then scores; desktop fits board + controls in the first screen */
+@media (max-width:920px){main{gap:16px}aside{display:contents}
+  main>.stage{order:1}aside>.c-throw{order:2}aside>.c-score{order:3}aside>.c-coach{order:4}aside>.rules{order:5}}
+@media (min-width:921px){.stage>.boardwrap,.stage>.status{max-width:min(760px,max(420px,calc(100vh - 170px)));max-width:min(760px,max(420px,calc(100dvh - 170px)))}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1>3LOW</h1><span class="by">by Myndvice · practice table</span></div>
+    <p class="tag">Sit down with up to seven practice players. Throw at the −1, keep at least one die every roll, and finish your turn with the lowest score.</p>
+  </header>
+
+  <main>
+    <section class="stage" aria-label="Game board">
+      <div class="boardwrap">
+        <canvas id="cv" aria-label="3LOW board. Drag from your seat at the bottom toward the center to throw."></canvas>
+        <div class="banner" id="banner" hidden>
+          <h2 id="bTitle"></h2>
+          <p id="bText"></p>
+          <button class="primary" id="bBtn">Next round</button>
+        </div>
+      </div>
+      <div class="status">
+        <p id="status">Loading the table…</p>
+        <div class="controls">
+          <label><input type="checkbox" id="assist" checked> Aim guide</label>
+          <button id="autoThrow">Throw for me</button>
+        </div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card c-score">
+        <div class="cardHead"><h3 id="roundLbl">Round 1 · first to 3 round points</h3>
+          <div class="pctl" role="group" aria-label="Number of players"><button id="remP" type="button" aria-label="Remove a player">−</button><span><b id="pCount">3</b> players</span><button id="addP" type="button" aria-label="Add a player">+</button></div></div>
+        <p class="pnote" id="pNote" hidden>Changing players starts a new game.</p>
+        <div class="players" id="players"></div>
+      </div>
+
+      <div class="card c-throw">
+        <h3 id="trayLbl">This throw</h3>
+        <div class="tray" id="tray"></div>
+        <div class="actions">
+          <button class="primary" id="keepBtn" disabled>Keep selected</button>
+          <button id="suggestBtn" disabled>Suggest</button>
+        </div>
+        <div class="breakdown" id="breakdown"></div>
+      </div>
+
+      <div class="card c-coach">
+        <h3>Coach</h3>
+        <div class="log" id="log" aria-live="polite"></div>
+      </div>
+
+      <details class="card rules">
+        <summary>Rules on the board</summary>
+        <h4>How to play</h4>
+        <ol>
+          <li>Pick up all 5 dice.</li>
+          <li>Roll at the center target and let go before your hand crosses the foul line.</li>
+          <li>Check the roll: instant wins, dice touching the −1 target, special combinations, single 3s.</li>
+          <li>Keep at least 1 die per roll, building the lowest score. Pick up the rest and roll again.</li>
+          <li>Say your total, then pass the dice.</li>
+          <li>Lowest score each round wins 1 round point. 3 round points wins the game.</li>
+        </ol>
+        <h4>Home roll</h4>
+        <table>
+          <tr><td>Any 3</td><td>0</td></tr>
+          <tr><td>4-5-6 run</td><td>0</td></tr>
+          <tr><td>3 of a kind</td><td>0</td></tr>
+          <tr><td>Full house (3 of a kind + 2 of a kind)</td><td>−1</td></tr>
+          <tr><td>4 of a kind</td><td>−2</td></tr>
+        </table>
+        <h4>Good roll</h4>
+        <table><tr><td>Any die that lands in the target</td><td>−1</td></tr></table>
+        <h4>Bad roll</h4>
+        <table>
+          <tr><td>Rolling hand crosses the foul line</td><td>+1</td></tr>
+          <tr><td>Die rolls off the arena</td><td>+1</td></tr>
+        </table>
+        <ul class="note" style="margin-top:6px"><li>One free roll per turn.</li><li>No bad dice for combos.</li></ul>
+        <h4>Instant wins</h4>
+        <ul><li>5 of a kind</li><li>Large straight (1-2-3-4-5 or 2-3-4-5-6)</li></ul>
+        <h4>How this table reads them</h4>
+        <ul class="note">
+          <li>Every die scores its face, except 3s, which score 0.</li>
+          <li>Combos are scored on the dice you keep, even when they came from different throws. Combo dice score the combo's value instead of their faces: three 6s score 0, a full house scores −1, 4 of a kind scores −2.</li><li>Five of a kind is an instant win, whether it lands in one throw or you build it across your turn. A large straight has to land in a single throw.</li><li>A die touching the target loses its pips and is worth −1 when you keep it. Because it has no pips, it can't be part of a combo.</li>
+          <li>The first bad throw of your turn carries no penalty.</li>
+          <li>A die that rolled off can't be part of a combo.</li>
+          <li>A tie for lowest scores nobody that round.</li>
+          <li>The winner of the last round starts the next one, and play goes clockwise from there. After a tie, the same player starts again.</li>
+          <li>Kept dice go in your HOME section. A kept target die goes in GOOD; a kept die that rolled off goes in BAD, along with a +1 marker for each foul.</li>
+        </ul>
+      </details>
+    </aside>
+  </main>
+</div>
+
+<script>
+(()=>{
+const W=1000,C=500,RA=467,RV=330/Math.cos(Math.PI/8);
+const RIM=318,FILL=306,FOUL=272,TR=36,HALF=12,DD=26;
+const D2R=Math.PI/180;
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+const BOTCOL=['#5cc8ff','#ff7a59','#7ee081','#c49bff','#ff8fc7','#f4a259','#9ad8d4'];
+function makePlayers(n){const seats=[];for(let k=0;k<n;k++){const a=90+Math.round(k*8/n)*45;if(!seats.includes(a))seats.push(a)}
+  return seats.map((a,k)=>k===0?{name:'You',short:'YOU',chip:'Y',color:'#f2c230',seat:90,bot:false}:
+    Object.assign({name:'HOMIE #'+k,short:'HOMIE #'+k,chip:''+k,color:BOTCOL[k-1],seat:a,bot:true},k%2?{aim:85,pow:.1,foul:.05,wild:.01,style:'steady'}:{aim:105,pow:.13,foul:.08,wild:.02,style:'wild'}))}
+let P=makePlayers(3);
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d'),board=document.createElement('canvas');
+const rnd=n=>1+Math.floor(Math.random()*n);
+const gauss=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
+const pv=f=>f===3?0:f;
+const sgn=v=>v>0?'+'+v:v<0?'−'+Math.abs(v):'0';
+const vspan=v=>`<span class="v ${v<0?'good':v>0?'bad':''}">${sgn(v)}</span>`;
+
+// ---------- geometry ----------
+function starPoly(s=1){const p=[];for(let k=0;k<8;k++){const a=k*45*D2R,b=(k*45+22.5)*D2R;p.push([C+Math.cos(a)*RA*s,C+Math.sin(a)*RA*s],[C+Math.cos(b)*RV*s,C+Math.sin(b)*RV*s]);}return p}
+function oct(ap){const r=ap/Math.cos(Math.PI/8),p=[];for(let k=0;k<8;k++){const a=(k*45+22.5)*D2R;p.push([C+Math.cos(a)*r,C+Math.sin(a)*r]);}return p}
+function inOct(x,y,ap){const dx=x-C,dy=y-C;for(let k=0;k<8;k++){const a=k*45*D2R;if(dx*Math.cos(a)+dy*Math.sin(a)>ap)return false}return true}
+const STAR=starPoly(1);
+function inPoly(x,y,p){let c=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const[xi,yi]=p[i],[xj,yj]=p[j];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c}return c}
+function path(b,p){b.beginPath();p.forEach(([x,y],i)=>i?b.lineTo(x,y):b.moveTo(x,y));b.closePath()}
+function decel(s){return Math.max(0,s*.975-.05)}
+function distFor(v){let d=0,s=v;for(let i=0;i<2000&&s>.02;i++){d+=s;s=decel(s)}return d}
+function vFor(d){let lo=.3,hi=30;for(let i=0;i<30;i++){const m=(lo+hi)/2;distFor(m)<d?lo=m:hi=m}return(lo+hi)/2}
+
+// ---------- board art ----------
+const PAPER='#f4f4f1',FELT='#0b0b0c';
+function buildBoard(){
+  board.width=cv.width;board.height=cv.height;
+  const b=board.getContext('2d'),s=cv.width/W;
+  b.setTransform(s,0,0,s,0,0);b.clearRect(0,0,W,W);
+  path(b,STAR);b.fillStyle=FELT;b.fill();
+  path(b,starPoly(.965));b.strokeStyle=PAPER;b.lineWidth=3;b.lineJoin='miter';b.stroke();
+  const seatOf={};P.forEach((p,i)=>seatOf[((p.seat%360)+360)%360]=i);
+  const active=G&&G.turn?G.turn.pi:-1;
+  const vr=RIM/Math.cos(Math.PI/8);
+  for(let k=0;k<8;k++){
+    const th=k*45,a=th*D2R,A=[C+Math.cos(a)*RA*.965,C+Math.sin(a)*RA*.965];
+    const Vg=[C+Math.cos((th-22.5)*D2R)*vr,C+Math.sin((th-22.5)*D2R)*vr];
+    const Vb=[C+Math.cos((th+22.5)*D2R)*vr,C+Math.sin((th+22.5)*D2R)*vr];
+    const M=[(Vg[0]+Vb[0])/2,(Vg[1]+Vb[1])/2];
+    const Q=[M[0]+(A[0]-M[0])*.55,M[1]+(A[1]-M[1])*.55];
+    const pi=seatOf[th];const rot=(th-90)*D2R;
+    if(pi!==undefined){path(b,[Vg,Vb,Q]);b.fillStyle=P[pi].color;b.globalAlpha=pi===active?1:.55;b.fill();b.globalAlpha=1}
+    b.beginPath();b.moveTo(Vg[0],Vg[1]);b.lineTo(Q[0],Q[1]);b.lineTo(Vb[0],Vb[1]);b.strokeStyle=PAPER;b.lineWidth=3;b.stroke();
+    const hc=[(Vg[0]+Vb[0]+Q[0])/3,(Vg[1]+Vb[1]+Q[1])/3];
+    label(b,pi!==undefined?P[pi].short:'HOME',hc,rot,pi!==undefined?22:25,pi!==undefined?'#0c0d0f':PAPER);
+    [[Vg,'GOOD -1'],[Vb,'BAD +1']].forEach(([V,t])=>{
+      const c=[(A[0]+V[0]+Q[0])/3,(A[1]+V[1]+Q[1])/3];
+      let ang=Math.atan2(V[1]-A[1],V[0]-A[0]);if(Math.cos(ang-rot)<0)ang+=Math.PI;
+      label(b,t,c,ang,17,PAPER);
+    });
+  }
+  path(b,oct(RIM));b.strokeStyle=PAPER;b.lineWidth=3;b.stroke();
+  path(b,oct(FILL));b.fillStyle=PAPER;b.fill();
+  b.setLineDash([14,10]);path(b,oct(FOUL));b.strokeStyle='#111';b.lineWidth=3;b.stroke();b.setLineDash([]);
+  [[C-FOUL,-Math.PI/2],[C+FOUL,Math.PI/2]].forEach(([x,r])=>{b.save();b.translate(x,C);b.rotate(r);b.fillStyle=PAPER;b.fillRect(-52,-11,104,22);b.restore();label(b,'FOUL LINE',[x,C],r,16,'#111')});
+  label(b,'3LOW',[C,C-205],0,40,'#111');
+  b.fillStyle='#111';b.fillRect(C-70,C-182,140,2);
+  label(b,'BY MYNDVICE',[C,C-168],0,12,'#111');
+  b.beginPath();b.arc(C,C,TR,0,Math.PI*2);b.fillStyle='#111';b.fill();
+  label(b,'-1',[C,C+2],0,28,PAPER);
+}
+function label(b,t,[x,y],r,size,col){b.save();b.translate(x,y);b.rotate(r);b.font=`${size}px "Permanent Marker", cursive`;b.fillStyle=col;b.textAlign='center';b.textBaseline='middle';b.fillText(t,0,0);b.restore()}
+
+// ---------- state ----------
+let G=null,phase='idle',dice=[],hand=null,drag=null,settle=0,foulFlash=0,timers=[];
+const later=(fn,ms)=>{const t=setTimeout(fn,ms);timers.push(t)};
+function clearTimers(){timers.forEach(clearTimeout);timers=[]}
+
+function newGame(){clearTimers();dice=[];hand=null;drag=null;G={points:P.map(()=>0),round:0,starter:0,next:0,over:false};$('log').innerHTML='';$('pCount').textContent=P.length;$('remP').disabled=P.length<=2;$('addP').disabled=P.length>=8;
+  log('info',`Welcome to the table: you and ${P.length-1} HOMIE${P.length>2?'s':''}. Odd-numbered HOMIEs throw steadier; even-numbered ones throw harder and foul more. Like real life, the target is hard to hit for everyone. Watch how their choices play out. Kept dice go in your HOME section, target dice in GOOD, and dice that rolled off in BAD.`);
+  newRound()}
+function newRound(){G.round++;G.starter=G.next;const n=P.length;G.order=P.map((_,i)=>(G.starter+i)%n);G.oi=0;
+  G.scores=P.map(()=>null);G.stored=P.map(()=>[]);G.cflag=P.map(()=>[]);G.adj=P.map(()=>[]);
+  $('banner').hidden=true;log('round',`Round ${G.round} · ${G.order[0]===0?'you start':P[G.order[0]].name+' starts'}, then clockwise`);startTurn()}
+function startTurn(){const pi=G.order[G.oi];G.turn={pi,free:false,n:0};dice=[];buildBoard();
+  if(P[pi].bot){phase='bot';status(`${P[pi].name} picks up the dice…`);later(()=>botThrow(pi),900)}
+  else{phase='aim';log('info','Your turn. Swipe from your yellow seat toward the −1 and release before you cross the dashed foul line.')}
+  render()}
+
+// ---------- throwing ----------
+function launch(pi,rx,ry,dx,dy,v,fouled){
+  const n=5-G.stored[pi].length,px=-dy,py=dx;dice=[];
+  for(let i=0;i<n;i++){const o=(i-(n-1)/2)*21,al=(i%2)*16-8;
+    const sp=v*(.88+Math.random()*.22),ang=(Math.random()-.5)*20*D2R,ca=Math.cos(ang),sa=Math.sin(ang);
+    dice.push({x:rx+px*o+dx*al,y:ry+py*o+dy*al,vx:(dx*ca-dy*sa)*sp,vy:(dx*sa+dy*ca)*sp,rot:Math.random()*6,spin:(Math.random()-.5)*.5,face:rnd(6),dist:0,off:false,alpha:1,sel:false,target:false})}
+  G.turn.n++;G.turn.fouled=fouled;phase='rolling';settle=0;
+  if(fouled)foulFlash=60;
+  status('Dice rolling…');render()}
+
+function step(){let moving=false;
+  for(const d of dice){const s=Math.hypot(d.vx,d.vy);
+    if(s>.02){moving=true;d.x+=d.vx;d.y+=d.vy;const k=decel(s)/s;d.vx*=k;d.vy*=k;d.rot+=d.spin;d.spin*=.96;d.dist+=s;if(d.dist>17){d.dist=0;d.face=rnd(6)}}
+    else{d.vx=d.vy=0}
+    if(!d.off&&Math.hypot(d.x-C,d.y-C)>RA+4)d.off=true;
+    if(d.off&&Math.hypot(d.x-C,d.y-C)>RA+4){d.alpha=Math.max(0,d.alpha-.05);if(!d.alpha){d.vx=d.vy=0}}}
+  for(let i=0;i<dice.length;i++)for(let j=i+1;j<dice.length;j++){const a=dice[i],b=dice[j];if(a.alpha<.5||b.alpha<.5)continue;
+    let dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy);if(dist>=DD||dist===0)continue;
+    const nx=dx/dist,ny=dy/dist,ov=(DD-dist)/2;a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;
+    const rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rel<0){const im=-1.5*rel/2;a.vx-=im*nx;a.vy-=im*ny;b.vx+=im*nx;b.vy+=im*ny;a.spin+=.1;b.spin-=.1}}
+  return moving}
+
+function onSettle(){
+  const pi=G.turn.pi,who=P[pi].name,you=!P[pi].bot;
+  for(const d of dice){if(!d.off&&!inPoly(d.x,d.y,STAR)){d.off=true;d.alpha=.4}
+    d.target=!d.off&&Math.hypot(d.x-C,d.y-C)<TR}
+  const bad=[];if(G.turn.fouled)bad.push(['hand crossed the foul line',1,'foul']);
+  dice.filter(d=>d.off).forEach(d=>bad.push([`a ${d.face} rolled off the arena`,1,'off']));
+  if(bad.length){
+    if(!G.turn.free){G.turn.free=true;G.adj[pi].push({t:'Free roll used',v:0,s:'free roll',free:true});log('bad',`<b>${who}</b>: ${bad.map(b=>b[0]).join(', ')}. That's a bad roll, but it's the first one this turn, so it's free: no penalty.`)}
+    else bad.forEach(([t,v,s])=>{G.adj[pi].push({t:'Bad roll: '+t,v,s});log('bad',`<b>${who}</b>: ${t} ${vspan(v)}. The free roll is already used.`)})}
+  dice.filter(d=>d.target).forEach(d=>log('good',`<b>${who}</b>: the ${d.face} is touching the center target. Its pips no longer count; keep it and it's worth ${vspan(-1)}.`));
+  const all=combo(dice.filter(d=>!d.off));if(all&&all.instant){instantWin(pi,all.name);return}
+  const inD=dice.filter(d=>!d.off&&!d.target),inA=inD.map(d=>d.face),cb=combo(inD);G.turn.cb=null;
+  if(cb){G.turn.cb=cb;const fs=cb.dice.map(d=>d.face),face=fs.reduce((a,f)=>a+pv(f),0),nw=['','','two','three','four','all five'][fs.length];
+    log('good',`<b>${who}</b> rolled a <b>${cb.name}</b> (${fs.join('-')}). Keep ${nw} and they score ${vspan(cb.v)} instead of ${face}.`)}
+  if(dice.some(d=>d.off)&&cb===null&&inA.length<dice.length&&you&&G.turn.n===1)log('info','Off-arena dice can\'t help make a combo.');
+  phase=you?'choose':'botChoose';
+  if(you){const t=dice.filter(d=>d.face===3).length;
+    status('Tap dice on the board or in the tray to keep them (at least one), then press Keep.');
+    if(t&&G.turn.n<=2)log('info',`You rolled ${t===1?'a 3':t+' threes'}. 3s score 0, the best a die can do.`)}
+  else later(()=>botChoose(pi),1000);
+  render()}
+
+function combo(ds,hand){if(!ds.length)return null;const f=ds.map(d=>d.face),c={};f.forEach(x=>c[x]=(c[x]||0)+1);
+  const n=Object.values(c),mx=Math.max(...n),of=k=>ds.filter(d=>d.face===+k);
+  if(f.length===5&&!hand){if(mx===5)return{name:'5 of a kind',instant:true};const s=[...f].sort().join('');if(s==='12345'||s==='23456')return{name:'large straight',instant:true}}
+  const top=Object.keys(c).find(k=>c[k]===mx);
+  if(mx>=4)return{name:'4 of a kind',v:-2,dice:of(top).slice(0,4)};
+  if(n.includes(3)&&n.includes(2))return{name:'full house',v:-1,dice:ds.slice()};
+  if(mx===3)return{name:'3 of a kind',v:0,dice:of(top)};
+  if(c[4]&&c[5]&&c[6])return{name:'4-5-6 run',v:0,dice:[4,5,6].map(k=>of(k)[0])};return null}
+
+// ---------- bots ----------
+function botRelease(p,skill){
+  const a=p.seat*D2R,fouled=Math.random()<skill.foul,rr=fouled?FOUL-30-Math.random()*25:FOUL+26+Math.random()*12,perp=(Math.random()-.5)*60;
+  const rx=C+Math.cos(a)*rr-Math.sin(a)*perp,ry=C+Math.sin(a)*rr+Math.cos(a)*perp;
+  const ax=C+gauss()*skill.aim,ay=C+gauss()*skill.aim;
+  let dx=ax-rx,dy=ay-ry;const L=Math.hypot(dx,dy);dx/=L;dy/=L;
+  let d=L*(1+gauss()*skill.pow);if(Math.random()<skill.wild)d*=1.45;d=Math.min(d,L+(Math.random()<skill.wild?320:200));
+  return{rx,ry,dx,dy,v:vFor(Math.max(40,d)),fouled,sx:C+Math.cos(a)*430,sy:C+Math.sin(a)*430}}
+function botThrow(pi,skill=P[pi]){
+  if(phase!=='bot'&&phase!=='aim')return;
+  const r=botRelease(P[pi],skill);status(`${P[pi].name} is throwing…`);phase='bot';
+  hand={x:r.sx,y:r.sy,color:P[pi].color,crossed:false,anim:{fx:r.sx,fy:r.sy,tx:r.rx,ty:r.ry,t0:performance.now(),dur:520,done:()=>{hand=null;launch(pi,r.rx,r.ry,r.dx,r.dy,r.v,r.fouled)}}};
+  render()}
+function pickKeep(ds){
+  const pi=G.turn.pi,left=5-G.stored[pi].length,kept=G.stored[pi].filter((x,i)=>G.cflag[pi][i]===false);let best=null;
+  for(let m=1;m<(1<<ds.length);m++){const sub=ds.filter((d,i)=>m>>i&1),hf=[...kept,...sub.filter(d=>!d.target&&!d.off).map(d=>d.face)],h=handEval(hf);
+    const val=hf.length===5&&hf.every(x=>x===hf[0])?-99:h.f+h.v+sub.filter(d=>d.off).reduce((a,d)=>a+pv(d.face),0)-sub.filter(d=>d.target).length+3*(left-sub.length);
+    if(!best||val<best.val-1e-9||(Math.abs(val-best.val)<1e-9&&sub.length>best.sub.length))best={val,sub,h}}
+  if(best&&best.h.cb){const keep=best.sub;
+    return{keep,why:`keep ${keep.map(d=>d.target?'the target die':d.face).join(', ')}: with the dice already kept that makes a ${best.h.cb.name}, and those dice score ${sgn(best.h.cb.v)}`}}
+  const keep=ds.filter(d=>d.target||d.face<=3);
+  if(keep.length)return{keep,why:`keep ${keep.map(d=>d.target?'the target die':d.face).join(', ')}: ${keep.some(d=>d.target)?'a target die is worth −1, ':''}3s score 0, and 1s and 2s beat the 3 points a re-rolled die averages`};
+  const low=ds.reduce((m,d)=>d.face<m.face?d:m,ds[0]);
+  return{keep:[low],why:`nothing under 4, so keep only the lowest (${low.face}) and re-roll the rest for another shot`}}
+function botChoose(pi){
+  const {keep,why}=pickKeep(dice);keep.forEach(d=>d.sel=true);render();
+  log('info',`<b>${P[pi].name}</b> decides to ${why}.`);
+  later(()=>storeSelected(),800)}
+
+// ---------- storing / scoring ----------
+function handEval(faces){const ds=faces.map((face,i)=>({face,i})),cb=combo(ds,true),z=new Set(cb?cb.dice.map(d=>d.i):[]);
+  return{f:ds.reduce((a,d)=>a+(z.has(d.i)?0:pv(d.face)),0),cb,z,v:cb?cb.v:0}}
+function total(pi){const idx=[],faces=[];let off=0;G.stored[pi].forEach((x,i)=>{const c=G.cflag[pi][i];if(c===false){idx.push(i);faces.push(x)}else if(c==='off')off+=pv(x)});
+  const h=handEval(faces),zi=new Set([...h.z].map(j=>idx[j])),a=G.adj[pi].reduce((s,e)=>s+e.v,0);return{f:h.f+off,a,cb:h.cb,zi,t:h.f+off+h.v+a}}
+function storeSelected(){
+  const sel=dice.filter(d=>d.sel);if(!sel.length)return;const pi=G.turn.pi;
+  const before=total(pi).cb;
+  sel.forEach(d=>{G.stored[pi].push(d.face);const tg=d.target;G.cflag[pi].push(tg?'target':d.off?'off':false);if(tg)G.adj[pi].push({t:'Die in target',v:-1,s:'target'})});
+  const now=total(pi).cb;if(now&&(!before||before.name!==now.name))log('good',`${P[pi].bot?'<b>'+P[pi].name+"'s</b>":'Your'} kept dice now make a <b>${now.name}</b>: those dice score ${vspan(now.v)}.`);
+  G.turn.cb=null;
+  if(!P[pi].bot)log('info',`You keep ${sel.map(d=>d.face).join(', ')}.`);
+  dice=[];
+  if(G.stored[pi].length>=5){const f=G.stored[pi].filter((x,i)=>G.cflag[pi][i]===false);if(f.length===5&&f.every(x=>x===f[0])){instantWin(pi,'5 of a kind',true);return}endTurn()}
+  else if(P[pi].bot){phase='bot';status(`${P[pi].name} picks up ${5-G.stored[pi].length} dice…`);later(()=>botThrow(pi),700)}
+  else{phase='aim';status(`Throw your remaining ${5-G.stored[pi].length} ${5-G.stored[pi].length===1?'die':'dice'}.`)}
+  render()}
+function endTurn(){
+  const pi=G.turn.pi,{f,a,t,cb}=total(pi);G.scores[pi]=t;
+  log(P[pi].bot?'info':'win',`<b>${P[pi].name}</b> ${P[pi].bot?'says':'say'} the total: dice ${f}${cb?`, ${cb.name} ${sgn(cb.v)}`:''}${a?`, adjustments ${sgn(a)}`:''}, so <b class="v">${t}</b>. Dice pass clockwise.`);
+  phase='between';G.oi++;render();
+  if(G.oi>=P.length)later(endRound,900);else later(startTurn,1100)}
+function endRound(){
+  const min=Math.min(...G.scores),w=G.scores.map((s,i)=>s===min?i:-1).filter(i=>i>=0);
+  const line=G.order.map(i=>`${P[i].name} ${G.scores[i]}`).join(' · ');
+  if(w.length===1){G.points[w[0]]++;G.next=w[0];log('win',`<b>${P[w[0]].name}</b> ${w[0]===0?'have':'has'} the lowest score (${min}) and ${w[0]===0?'take':'takes'} the round point.`);
+    finishRound(`${w[0]===0?'You take':P[w[0]].name+' takes'} round ${G.round}`,line)}
+  else{log('info',`Tie for lowest at ${min}. Nobody scores this round.`);finishRound(`Round ${G.round} is a tie`,line)}}
+function instantWin(pi,name,built){
+  G.points[pi]++;G.next=pi;G.scores[pi]='WIN';dice.forEach(d=>d.sel=false);
+  log('win',`<b>${P[pi].name}</b> ${built?'built':'rolled'} a <b>${name}</b>${built?' with the dice kept this turn':' with all 5 dice on the board'}. Instant win! The round ends right here.`);
+  phase='between';render();finishRound(`${name.toUpperCase()}! ${pi===0?'You win':P[pi].name+' wins'} instantly`,built?'Five of a kind kept across the turn ends the round.':'All five dice on the board in one throw ends the round.')}
+function finishRound(title,text){
+  phase='banner';status('Round over.');const champ=G.points.findIndex(p=>p>=3);
+  if(champ>=0){G.over=true;title=champ===0?'You win the game':`${P[champ].name} wins the game`;
+    text=`Round points: ${P.map((p,i)=>p.name+' '+G.points[i]).join(' · ')}`;log('win',title+'.')}
+  later(()=>{$('bTitle').textContent=title;$('bText').textContent=text;$('bBtn').textContent=G.over?'Play again':'Next round';$('banner').hidden=false;render();$('bBtn').focus({preventScroll:true})},700);
+  render()}
+function setPlayers(n){n=Math.max(2,Math.min(8,n));if(n===P.length)return;P=makePlayers(n);$('banner').hidden=true;newGame();buildBoard();log('info',`New game with ${n} players.`)}
+$('addP').onclick=()=>setPlayers(P.length+1);$('remP').onclick=()=>setPlayers(P.length-1);
+['addP','remP'].forEach(id=>{$(id).addEventListener('mouseenter',()=>$('pNote').hidden=false);$(id).addEventListener('focus',()=>$('pNote').hidden=false)});
+$('bBtn').onclick=()=>{G.over?newGame():newRound()};
+
+// ---------- player input ----------
+function toBoard(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*W}}
+cv.addEventListener('pointerdown',e=>{
+  const p=toBoard(e);
+  if(phase==='choose'){const d=dice.slice().reverse().find(d=>d.alpha>.3&&Math.hypot(d.x-p.x,d.y-p.y)<18);if(d){d.sel=!d.sel;render()}return}
+  if(phase!=='aim')return;
+  const ang=Math.atan2(p.y-C,p.x-C)/D2R,diff=Math.abs(((ang-90)+540)%360-180);
+  if(inOct(p.x,p.y,FOUL)||diff>55||Math.hypot(p.x-C,p.y-C)>RA+10){status('Start your throw outside the foul line, on your yellow seat at the bottom.');return}
+  cv.setPointerCapture(e.pointerId);cv.classList.add('grabbing');
+  drag={hist:[{...p,t:performance.now()}],crossed:false,start:p};hand={x:p.x,y:p.y,color:P[0].color}});
+cv.addEventListener('pointermove',e=>{if(!drag)return;const p=toBoard(e),t=performance.now();
+  drag.hist.push({...p,t});while(drag.hist.length>2&&t-drag.hist[0].t>110)drag.hist.shift();
+  if(inOct(p.x,p.y,FOUL)&&!drag.crossed){drag.crossed=true;foulFlash=40}
+  hand.x=p.x;hand.y=p.y;hand.crossed=drag.crossed});
+function release(e){if(!drag)return;cv.classList.remove('grabbing');
+  const p=toBoard(e),h=drag.hist,o=h[0],t=performance.now(),dt=Math.max(16,t-o.t);
+  let dx=p.x-o.x,dy=p.y-o.y;const sp=Math.hypot(dx,dy)/dt,moved=Math.hypot(p.x-drag.start.x,p.y-drag.start.y),crossed=drag.crossed;
+  drag=null;hand=null;
+  if(moved<12||sp<.05){status('That was more of a tap. Swipe toward the center and let go while moving.');return}
+  dx/=sp*dt;dy/=sp*dt;const v=Math.min(16,Math.max(1.2,sp*16.67*.3),vFor(Math.hypot(p.x-C,p.y-C)+200));
+  launch(0,p.x,p.y,dx,dy,v,crossed);
+  if(crossed)log('bad','Your hand crossed the dashed foul line before you let go. Release earlier next time.')}
+cv.addEventListener('pointerup',release);cv.addEventListener('pointercancel',release);
+$('autoThrow').onclick=()=>{if(phase==='aim')botThrow(0,{aim:90,pow:.1,foul:0,wild:0})};
+$('keepBtn').onclick=()=>{if(phase==='choose')storeSelected()};
+$('suggestBtn').onclick=()=>{if(phase!=='choose')return;const{keep,why}=pickKeep(dice);dice.forEach(d=>d.sel=keep.includes(d));log('info',`Suggestion: ${why}.`);render()};
+$('assist').onchange=()=>{};
+
+// ---------- drawing ----------
+const lerp=(p,q,t)=>[p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t];
+function seatGeom(th){const vr=RIM/Math.cos(Math.PI/8),a=th*D2R,A=[C+Math.cos(a)*RA*.965,C+Math.sin(a)*RA*.965];
+  const Vg=[C+Math.cos((th-22.5)*D2R)*vr,C+Math.sin((th-22.5)*D2R)*vr],Vb=[C+Math.cos((th+22.5)*D2R)*vr,C+Math.sin((th+22.5)*D2R)*vr];
+  const M=lerp(Vg,Vb,.5);return{A,Vg,Vb,M,Q:lerp(M,A,.55),rot:(th-90)*D2R}}
+function miniDie([x,y],f,rot,mark){ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.scale(.74,.74);
+  rr(-HALF,-HALF,HALF*2,HALF*2,5);const tgt=mark==='good';ctx.fillStyle=tgt?'#0c0d0f':'#fbfbf9';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=tgt?'#f4f4f1':'#0c0d0f';ctx.stroke();
+  if(tgt){ctx.fillStyle='#f4f4f1';ctx.font='600 12px "IBM Plex Mono", monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('-1',0,1)}
+  else{ctx.fillStyle='#0c0d0f';PIPS[f].forEach(i=>{ctx.beginPath();ctx.arc((i%3-1)*6.4,(Math.floor(i/3)-1)*6.4,2.3,0,Math.PI*2);ctx.fill()})}
+  if(mark==='combo'||mark==='bad'||tgt){rr(-HALF-3.5,-HALF-3.5,HALF*2+7,HALF*2+7,7);ctx.lineWidth=3;ctx.strokeStyle=mark==='bad'?'#ff5a45':'#1fbf76';ctx.stroke()}
+  ctx.restore()}
+function drawKept(){if(!G||!G.stored)return;
+  P.forEach((p,pi)=>{const g=seatGeom(p.seat),tt=total(pi),home=[],good=[],bad=[];
+    G.stored[pi].forEach((f,i)=>{const c=G.cflag[pi][i];(c==='target'?good:c==='off'?bad:home).push({f,i})});
+    const c0=lerp(g.M,g.Q,.32),L=Math.hypot(g.Vb[0]-g.Vg[0],g.Vb[1]-g.Vg[1]),u=[(g.Vb[0]-g.Vg[0])/L,(g.Vb[1]-g.Vg[1])/L];
+    home.forEach((d,k)=>{const o=(k-(home.length-1)/2)*21;miniDie([c0[0]+u[0]*o,c0[1]+u[1]*o],d.f,g.rot,tt.zi.has(d.i)?'combo':'')});
+    const slot=(V,k)=>lerp(lerp(V,g.Q,.5),g.A,[.33,.5,.17,.66,.8][k]||.8);
+    good.forEach((d,k)=>miniDie(slot(g.Vg,k),d.f,g.rot,'good'));
+    bad.forEach((d,k)=>miniDie(slot(g.Vb,k),d.f,g.rot,'bad'));
+    G.adj[pi].filter(e=>e.s==='foul').forEach((e,j)=>{const[x,y]=slot(g.Vb,bad.length+j);ctx.save();ctx.beginPath();ctx.arc(x,y,9,0,Math.PI*2);ctx.fillStyle='#ff5a45';ctx.fill();
+      ctx.translate(x,y);ctx.rotate(g.rot);ctx.fillStyle='#0b0b0c';ctx.font='700 10px "IBM Plex Mono", monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('+1',0,1);ctx.restore()})})}
+function drawDie(d){ctx.save();ctx.translate(d.x,d.y);ctx.rotate(d.rot);ctx.globalAlpha=d.alpha;
+  ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=6;ctx.shadowOffsetY=3;
+  rr(-HALF,-HALF,HALF*2,HALF*2,5);ctx.fillStyle='#fbfbf9';ctx.fill();ctx.shadowColor='transparent';
+  ctx.lineWidth=2;ctx.strokeStyle='#0c0d0f';ctx.stroke();ctx.fillStyle='#0c0d0f';
+  PIPS[d.face].forEach(i=>{ctx.beginPath();ctx.arc((i%3-1)*6.4,(Math.floor(i/3)-1)*6.4,2.3,0,Math.PI*2);ctx.fill()});
+  if(d.sel){rr(-HALF-5,-HALF-5,HALF*2+10,HALF*2+10,8);ctx.lineWidth=3.5;ctx.strokeStyle='#f2c230';ctx.stroke()}
+  ctx.restore();
+  if(phase!=='rolling'&&(d.target||d.off)&&d.alpha>.2){ctx.save();ctx.font='600 15px "IBM Plex Mono", monospace';ctx.textAlign='center';
+    ctx.fillStyle=d.target?'#1fbf76':'#ff5a45';ctx.strokeStyle='#0b0b0c';ctx.lineWidth=4;const t=d.target?'-1':'+1 OFF';
+    ctx.strokeText(t,d.x,d.y-HALF-10);ctx.fillText(t,d.x,d.y-HALF-10);ctx.restore()}}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function draw(){const s=cv.width/W;ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(board,0,0);ctx.setTransform(s,0,0,s,0,0);
+  if(foulFlash>0){foulFlash--;ctx.save();ctx.setLineDash([14,10]);ctx.globalAlpha=Math.min(1,foulFlash/20);path(ctx,oct(FOUL));ctx.strokeStyle='#ff3b2a';ctx.lineWidth=7;ctx.stroke();ctx.restore()}
+  if(phase==='aim'&&!drag){const a=P[0].seat*D2R,t=performance.now()/600;ctx.save();ctx.globalAlpha=.5+.3*Math.sin(t*3);
+    ctx.beginPath();ctx.arc(C+Math.cos(a)*395,C+Math.sin(a)*395,22,0,Math.PI*2);ctx.strokeStyle='#f2c230';ctx.lineWidth=3;ctx.setLineDash([6,6]);ctx.stroke();ctx.restore()}
+  drawKept();dice.forEach(drawDie);
+  if(drag&&hand&&$('assist').checked&&drag.hist.length>1){const h=drag.hist,o=h[0],l=h[h.length-1],dt=Math.max(16,l.t-o.t);
+    let dx=l.x-o.x,dy=l.y-o.y;const sp=Math.hypot(dx,dy)/dt;if(sp>.05){dx/=sp*dt;dy/=sp*dt;const v=Math.min(16,Math.max(1.2,sp*16.67*.3)),d=distFor(v);
+      const ex=l.x+dx*d,ey=l.y+dy*d;ctx.save();ctx.setLineDash([4,8]);ctx.strokeStyle='rgba(120,120,120,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(l.x,l.y);ctx.lineTo(ex,ey);ctx.stroke();
+      ctx.setLineDash([]);ctx.beginPath();ctx.arc(ex,ey,30,0,Math.PI*2);ctx.strokeStyle=inPoly(ex,ey,STAR)?'rgba(242,194,48,.95)':'rgba(255,70,50,.95)';ctx.lineWidth=3;ctx.stroke();ctx.restore()}}
+  if(hand){if(hand.anim){const a=hand.anim,k=Math.min(1,(performance.now()-a.t0)/a.dur),e=k*k*(3-2*k);hand.x=a.fx+(a.tx-a.fx)*e;hand.y=a.fy+(a.ty-a.fy)*e;
+      if(inOct(hand.x,hand.y,FOUL)&&!hand.crossed){hand.crossed=true;foulFlash=40}if(k>=1){const d=a.done;hand.anim=null;d();}}
+    if(hand){ctx.save();ctx.beginPath();ctx.arc(hand.x,hand.y,20,0,Math.PI*2);ctx.fillStyle=hand.color;ctx.globalAlpha=.85;ctx.fill();ctx.globalAlpha=1;ctx.lineWidth=3;ctx.strokeStyle=hand.crossed?'#ff3b2a':'#0b0b0c';ctx.stroke();ctx.restore()}}}
+function frame(){if(phase==='rolling'){let m=false;for(let i=0;i<2;i++)m=step()||m;if(!m){if(++settle>10){phase='settled';onSettle()}}else settle=0}
+  draw();requestAnimationFrame(frame)}
+
+// ---------- UI ----------
+function status(t){$('status').textContent=t}
+function log(kind,html){const p=document.createElement('p');p.className=kind;p.innerHTML=html;const L=$('log');L.appendChild(p);L.scrollTop=L.scrollHeight}
+function dieEl(f,sm){const d=document.createElement('span');d.className='die'+(sm?' sm':'');d.setAttribute('aria-hidden','true');for(let i=0;i<9;i++){const p=document.createElement('i');if(PIPS[f].includes(i))p.className='on';d.appendChild(p)}return d}
+function render(){
+  if(!G)return;$('roundLbl').textContent=`Round ${G.round} · first to 3 round points`;
+  const pl=$('players');pl.innerHTML='';
+  G.order.forEach(pi=>{const p=P[pi],row=document.createElement('div');row.className='prow'+(G.turn&&G.turn.pi===pi&&phase!=='banner'?' active':'');
+    const chip=document.createElement('span');chip.className='chip';chip.style.background=p.color;chip.textContent=p.chip;
+    const nm=document.createElement('div');nm.className='pname';nm.textContent=p.name+(p.bot?` · ${p.style}`:'');
+    const tot=document.createElement('div');tot.className='ptotal';
+    const sc=G.scores[pi];tot.textContent=sc!==null?sc:(G.stored[pi].length||G.adj[pi].length?total(pi).t:'–');
+    const meta=document.createElement('div');meta.className='pmeta';
+    const pips=document.createElement('span');pips.className='pips';pips.title=`${G.points[pi]} round points`;
+    for(let i=0;i<3;i++){const s=document.createElement('span');if(i<G.points[pi])s.className='on';pips.appendChild(s)}
+    const tt=total(pi),md=document.createElement('span');md.className='minidice';G.stored[pi].forEach((f,i)=>{const e=dieEl(f,true);if(tt.zi.has(i)){e.classList.add('combo');e.title='Part of a combo'}if(G.cflag[pi][i]==='target'){e.classList.add('tgt');e.title='Landed in the target: worth −1';e.innerHTML='−1'}md.appendChild(e)});
+    meta.append(pips,md);
+    if(G.stored[pi].length||G.adj[pi].length){const ad=document.createElement('span');ad.className='adjs';
+      const sum=document.createElement('span');sum.className='adj base';sum.textContent=`dice ${tt.f}`;ad.appendChild(sum);
+      if(tt.cb){const c=document.createElement('span');c.className='adj good';c.textContent=`${tt.cb.name} ${sgn(tt.cb.v)}`;ad.appendChild(c)}
+      const grp={};G.adj[pi].forEach(e=>{const k=e.s||e.t;(grp[k]=grp[k]||{v:0,n:0,free:e.free}).v+=e.v;grp[k].n++});
+      Object.entries(grp).forEach(([k,g])=>{const c=document.createElement('span');c.className='adj '+(g.free?'free':g.v<0?'good':g.v>0?'bad':'');
+        c.textContent=g.free?'free roll used':`${k}${g.n>1&&k!=='target'?' ×'+g.n:''} ${sgn(g.v)}`;c.title=g.free?'First bad throw this turn: no penalty':'';ad.appendChild(c)});
+      meta.appendChild(ad)}
+    if(G.turn&&G.turn.pi===pi&&sc===null){const fr=document.createElement('span');fr.textContent=G.turn.free?'free roll used':'free roll ready';meta.appendChild(fr)}
+    row.append(chip,nm,tot,meta);pl.appendChild(row)});
+  const tray=$('tray');tray.innerHTML='';const pi=G.turn?G.turn.pi:0,mine=pi===0&&phase==='choose';
+  $('trayLbl').textContent=G.turn?`${P[pi].name}${pi===0?'r':"'s"} throw${G.turn.n?' #'+G.turn.n:''}`:'This throw';
+  const showDice=dice.length&&phase!=='rolling'&&phase!=='aim';
+  if(showDice)dice.forEach(d=>{const b=document.createElement('button');b.className='trayDie';b.type='button';b.setAttribute('aria-pressed',d.sel);b.disabled=!mine;
+      b.setAttribute('aria-label',`Die showing ${d.face}${d.target?', in target':''}${d.off?', off the arena':''}`);b.appendChild(dieEl(d.face));
+      const t=document.createElement('span');t.className='t'+(d.target?' good':d.off?' bad':'');t.textContent=d.target?'= −1':d.off?'off':d.face===3?'= 0':'= '+d.face;b.appendChild(t);
+      b.onclick=()=>{d.sel=!d.sel;render()};tray.appendChild(b)});
+  else{const e=document.createElement('p');e.className='empty';e.textContent=phase==='rolling'?'Rolling…':phase==='aim'?`Swipe to throw ${5-G.stored[0].length} ${5-G.stored[0].length===1?'die':'dice'}.`:'Waiting for the next throw.';tray.appendChild(e)}
+  const n=dice.filter(d=>d.sel).length,left=dice.length;
+  const kb=$('keepBtn');kb.disabled=!(mine&&n);kb.textContent=!mine||!n?'Keep selected':n===left&&G.stored[0].length+n>=5?`Keep ${n} & finish turn`:`Keep ${n} & throw again`;
+  $('suggestBtn').disabled=!mine;$('autoThrow').disabled=phase!=='aim';
+  if(G.turn){const {f,a,t}=total(pi);const adj=G.adj[pi].map(e=>e.free?'free roll used':`${e.t} ${sgn(e.v)}`).join(' · ');
+    $('breakdown').innerHTML=`${P[pi].name}: kept dice ${f}${total(pi).cb?` · ${total(pi).cb.name} ${sgn(total(pi).cb.v)}`:''}${adj?` · ${adj}`:''} · total ${t}`}
+  if(phase==='aim')status(G.stored[0].length?`Throw your remaining ${5-G.stored[0].length} ${5-G.stored[0].length===1?'die':'dice'}. Release before the foul line.`:'Your throw. Press on your yellow seat, swipe toward the −1, and let go before the dashed foul line.');
+}
+
+function size(){const r=cv.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2.5),px=Math.round(r.width*d);if(px&&px!==cv.width){cv.width=cv.height=px;buildBoard()}}
+new ResizeObserver(size).observe(cv);
+size();newGame();requestAnimationFrame(frame);
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>buildBoard());
+})();
+</script>
+</body>
+</html>
